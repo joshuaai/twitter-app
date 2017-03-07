@@ -76,3 +76,157 @@ Enforcing minimum password standards
 To the user.rb model add
 validates :password, presence: true, length: { minimum: 6 }
 ```
+
+## Sign Up
+In the application.html.erb under the footer partial, add `<%= debug(params) if Rails.env.development? %>`
+To the custom.scss, add
+```
+/* miscellaneous */
+
+@mixin box_sizing {
+  -moz-box-sizing:    border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing:         border-box;
+}
+
+.debug_dump {
+  clear: both;
+  float: left;
+  width: 100%;
+  margin-top: 45px;
+  @include box_sizing;
+}
+```
+Add `resources :users` to routes.rb and creat the show.html.erb file to display the user profile.
+
+### Gravatar
+Gravatars are a convenient way to include user profile images without going through the trouble of 
+managing image upload, cropping, and storage
+
+Inside show.html.erb
+```
+<% provide(:title, @user.name) %>
+<h1>
+  <%= gravatar_for @user %>
+  <%= @user.name %>
+</h1>
+```
+
+Define the `gravatar_for` helper in the users_helper.rb
+```
+def gravatar_for(user)
+    gravatar_id = Digest::MD5::hexdigest(user.email.downcase)
+    gravatar_url = "https://secure.gravatar.com/avatar/#{gravatar_id}"
+    image_tag(gravatar_url, alt: user.name, class: "gravatar")
+end
+```
+
+### Creating the user
+In the user_controller.rb file, add 
+```
+def create
+    @user = User.new(user_params)
+    if @user.save
+      flash[:success] = "Welcome to the Twitter App!"
+      redirect_to @user
+    else
+      render 'new'
+    end
+end
+
+private
+  def user_params
+    params.require(:user).permit(:name, :email, :password,
+                                 :password_confirmation)
+  end
+```
+
+Inside the container div in application.html.erb, add
+```
+<% flash.each do |message_type, message| %>
+    <div class="alert alert-<%= message_type %>"><%= message %></div>
+<% end %>
+```
+
+### Handling Errors
+We use the common Rails convention of using a dedicated shared/ directory for partials expected to 
+be used in views across multiple controllers.
+
+In new.html.erb, we add `<%= render 'shared/error_messages' %>` 
+
+In _error_messages.html.erb
+```
+<% if @user.errors.any? %>
+  <div id="error_explanation">
+    <div class="alert alert-danger">
+      The form contains <%= pluralize(@user.errors.count, "error") %>.
+    </div>
+    <ul>
+    <% @user.errors.full_messages.each do |msg| %>
+      <li><%= msg %></li>
+    <% end %>
+    </ul>
+  </div>
+<% end %>
+```
+
+To the custom.scss add:
+```
+.field_with_errors {
+  @extend .has-error;
+  .form-control {
+    color: $state-danger-text;
+  }
+}
+```
+
+### Testing the signup
+Create an integrated test using
+`rails generate integration_test users_signup`
+
+The main purpose of the test is to verify that clicking the signup button results in not creating 
+a new user when the submitted information is invalid.
+
+To the users_signup_test.rb file created, add
+```
+test "invalid signup information" do
+    get signup_path
+    assert_no_difference 'User.count' do
+      post users_path, params: { user: { name:  "",
+                                         email: "user@invalid",
+                                         password:              "foo",
+                                         password_confirmation: "bar" } }
+    end
+    assert_template 'users/new'
+end
+```
+
+### Enforce SSL
+In the production.rb file, add
+`config.force_ssl = true`
+
+To use SSL on a custom URL, check [Heroku SSL Documentation](https://devcenter.heroku.com/articles/ssl).
+
+Use the Puma web server in production by replacing the contents of puma.rb with 
+```
+workers Integer(ENV['WEB_CONCURRENCY'] || 2)
+threads_count = Integer(ENV['RAILS_MAX_THREADS'] || 5)
+threads threads_count, threads_count
+
+preload_app!
+
+rackup      DefaultRackup
+port        ENV['PORT']     || 3000
+environment ENV['RACK_ENV'] || 'development'
+
+on_worker_boot do
+  # Worker specific setup for Rails 4.1+
+  # See: https://devcenter.heroku.com/articles/
+  # deploying-rails-applications-with-the-puma-web-server#on-worker-boot
+  ActiveRecord::Base.establish_connection
+end
+```
+
+In the appliaton root directory create a Procfile and add to it
+`web: bundle exec puma -C config/puma.rb`
+
