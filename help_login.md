@@ -231,7 +231,7 @@ end
 Then we put the log_out method to use in the sessions_controller.rb destroy action.
 ```
 def destroy
-    log_out
+    log_out if logged_in?
     redirect_to root_url
 end
 ```
@@ -252,6 +252,8 @@ test "login with valid information followed by logout" do
     delete logout_path
     assert_not is_logged_in?
     assert_redirected_to root_url
+    # Simulate a user clicking logout in a second window
+    delete logout_path
     follow_redirect!
     assert_select "a[href=?]", login_path
     assert_select "a[href=?]", logout_path,      count: 0
@@ -259,3 +261,200 @@ test "login with valid information followed by logout" do
 end
 ```
 We test the the login/logut machinery appear and disappear when the given actions are performed.
+
+## Persistent Sessions | Remebering Passwords | Advanced Login
+* Create a random string of digits for use as a remember token.
+* Place the token in the browser cookies with an expiration date far in the future.
+* Save the hash digest of the token to the database.
+* Place an encrypted version of the user’s id in the browser cookies.
+* When presented with a cookie containing a persistent user id, find the user in the database using the given id, and verify that the remember token cookie matches the associated hash digest from the database.
+
+We’ll start by adding the required remember_digest attribute to the User model:
+```
+rails generate migration add_remember_digest_to_users remember_digest:string
+rails db:migrate
+```
+
+To the User.rb model, use the Ruby SecureRandom class to generate the remember token.
+```
+attr_accessor :remember_token
+.
+.
+.
+# Returns a random token.
+def User.new_token
+    SecureRandom.urlsafe_base64
+end
+
+def remember
+    self.remember_token = User.new_token
+    update_attribute(:remember_digest, User.digest(:remeber_token))
+end
+```
+
+### Login with Remebering
+Rails has a special `.permanent` method which creates permanent cookies with an expiration time of `20.years.from_now`.
+
+For remebering the user_id, we'll use a signed cookie, which securely encrypts the cookie before placing it on the browser.
+
+To the User.rb, add 
+```
+# Returns true if the given token matches the digest.
+def authenticated?(remember_token)
+    BCrypt::Password.new(remember_digest).is_password?(remember_token)
+end
+``` 
+
+To the sessions_controller, add to the conditional user.authenticate method (between `log_in user` and `redirect_user`):
+```
+remember user
+```
+
+In the sessions_helper.rb file, after the `def log_in(user)` method, add:
+```
+# Remembers a user in a persistent session.
+def remember(user)
+    user.remember
+    cookies.permanent.signed[:user_id] = user.id
+    cookies.permanent[:remember_token] = user.remember_token
+end
+
+def current_user
+    if (user_id = session[:user_id])
+        @current_user ||= User.find_by(id: user_id)
+    elsif (user_id = cookies.signed[:user_id])
+        user = User.find_by(id: user_id)
+        if user && user.authenticated?(cookies[:remember_token])
+            log_in user
+            @current_user = user
+        end
+    end
+end
+
+.
+.
+.
+
+# Forgets a persistent session.
+def forget(user)
+    user.forget
+    cookies.delete(:user_id)
+    cookies.delete(:remember_token)
+end
+
+# Logs out the current user.
+def log_out
+    forget(current_user)
+    session.delete(:user_id)
+    @current_user = nil
+end
+```
+
+Becuase a remember digest in deleted upon logout from one browser, if the user is still logged in on another browser, an error
+will be thrown on a logout or re-logging in  attempt.
+
+In the sessions_controller.rb file, add to the `def destroy` method `logout if logged_in?`
+
+In the user_test.rb file, add:
+```
+test "authenticated? should return false for a user with nil digest" do
+    assert_not @user.authenticated?('')
+end
+```
+
+In the user.rb file, add `return false if remember_digest.nil?` to the `def authenticated?`
+
+## "Remeber me" Checkbox
+As with labels, text fields, password fields, and submit buttons, checkboxes can be created with a Rails helper method.
+
+In sessions/new.html.erb, add after password field:
+```
+<%= f.label :remember_me, class: "checkbox inline" do %>
+    <%= f.check_box :remember_me %>
+    <span>Remember me on this computer</span>
+<% end %>
+```
+
+In the custom.scss file, add to the /* Forms */ area:
+```
+.checkbox {
+  margin-top: -10px;
+  margin-bottom: 10px;
+  span {
+    margin-left: 20px;
+    font-weight: normal;
+  }
+}
+
+#session_remember_me {
+  width: auto;
+  margin-left: 0;
+}
+```
+
+In sessions_controller.rb, after the `login_user` in the `def create` method, replace `remeber user` with `params[:session][:remember_me] == '1' ? remember(user) : forget(user)`. It alternates a value of "1" to apply the remember_me helper.
+
+### Remeber tests
+We create a helper method in `test_helper.rb` that handles login in the tests so that we don't repeat ourselves. In the ActiveSupport::TestCase add:
+
+```
+# Log in as a particular user.
+def log_in_as(user)
+    session[:user_id] = user.id
+end
+```
+
+Add the ActionDsipatch::IntegrationTest class:
+```
+class ActionDispatch::IntegrationTest
+
+  # Log in as a particular user.
+  def log_in_as(user, password: 'password', remember_me: '1')
+    post login_path, params: { session: { email: user.email,
+                                          password: password,
+                                          remember_me: remember_me } }
+  end
+end
+```
+
+To verify the behavior of the “remember me” checkbox, we’ll write two tests, one each for submitting with and without the checkbox checked.
+
+In `users_login_test.rb` add:
+```
+test "login with remembering" do
+    log_in_as(@user, remember_me: '1')
+    assert_not_empty cookies['remember_token']
+end
+
+test "login without remembering" do
+    # Log in to set the cookie.
+    log_in_as(@user, remember_me: '1')
+    # Log in again and verify that the cookie is deleted.
+    log_in_as(@user, remember_me: '0')
+    assert_empty cookies['remember_token']
+end
+```
+
+Add a `test/helpers/sessions_helper_test.rb` file with the contents:
+```
+require 'test_helper'
+
+class SessionsHelperTest < ActionView::TestCase
+
+  def setup
+    @user = users(:Joshua)
+    remember(@user)
+  end
+
+  test "current_user returns right user when session is nil" do
+    assert_equal @user, current_user
+    assert is_logged_in?
+  end
+
+  test "current_user returns nil when remember digest is wrong" do
+    @user.update_attribute(:remember_digest, User.digest(User.new_token))
+    assert_nil current_user
+  end
+end
+```
+
