@@ -97,7 +97,7 @@ To the custom.scss, add
   @include box_sizing;
 }
 ```
-Add `resources :users` to routes.rb and creat the show.html.erb file to display the user profile.
+Add `resources :users` to routes.rb and create the `show.html.erb` file to display the user profile.
 
 ### Gravatar
 Gravatars are a convenient way to include user profile images without going through the trouble of 
@@ -149,7 +149,7 @@ Inside the container div in application.html.erb, add
 ```
 
 ### Handling Errors
-We use the common Rails convention of using a dedicated shared/ directory for partials expected to 
+We use the common Rails convention of using a dedicated `shared/` directory for partials expected to 
 be used in views across multiple controllers.
 
 In new.html.erb, we add `<%= render 'shared/error_messages' %>` 
@@ -229,4 +229,6 @@ end
 
 In the appliaton root directory create a Procfile and add to it
 `web: bundle exec puma -C config/puma.rb`
+
+The next session is completing [Login Using Sessions](https://github.com/joshuaai/twitter-app/blob/master/help_login.md)
 

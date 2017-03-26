@@ -1,9 +1,10 @@
 ## Sessions
 The only way to remember users' identity from page to page is by a session, which is a semi-permanent 
-connection between two computers.
+connection between two computers (such as a client computer running a web browser and a server running Rails).
 
-The sessions is a cookie-based authentication machinery. We will construct a sessions controller, a login form
-and then the relevant controller actions.
+The most common techniques for implementing sessions in Rails involve using cookies, which are small pieces of text placed on the user’s browser. Because cookies persist from one page to the next, they can store information (such as a user id) that can be used by the application to retrieve the logged-in user from the database.
+
+Unlike the `Users` resource, which uses a database back-end (via the User model) to persist data, the `Sessions` resource is a cookie-based authentication machinery. We will construct a sessions controller, a login form and then the relevant controller actions.
 
 ### Sessions Controller
 ```
@@ -94,7 +95,7 @@ end
 
 `rails test test/integration/users_login_test.rb`
 
-In application_controller.rb incluse the sessions helper thus `include SessionsHelper`
+In application_controller.rb include the sessions helper thus: `include SessionsHelper`
 
 In sessions_helper.rb add:
 ```
@@ -191,8 +192,7 @@ end
 ```
 
 ## Login upon Signup
-We need to add a call to log_in in the users_controller.rb create action.
-`log_in @user`
+We need to add a call to `log_in` in the users_controller.rb create action: `log_in @user`.
 
 To test this we define an is_logged_in? method in the ActiveSupport::TestCase of test_helper.rb
 ```
@@ -202,7 +202,7 @@ def is_logged_in?
 end
 ```
 
-Inside the users_signup_test, we assert the above method add the test
+Inside the `users_signup_test.rb` file, we assert the above method and add the test
 ```
 test "valid signup information" do
     get signup_path
@@ -458,3 +458,10 @@ class SessionsHelperTest < ActionView::TestCase
 end
 ```
 
+After git commit, push to heroku 
+```
+heroku maintenance:on
+git push heroku
+heroku run rails db:migrate
+heroku maintenance:off
+```
