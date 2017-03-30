@@ -10,6 +10,10 @@ end
 gem 'rails', '~> 5.0.1'
 # Password digest
 gem 'bcrypt'
+# Generate random users
+gem 'faker'
+gem 'will_paginate'
+gem 'bootstrap-will_paginate'
 # Bootstrap
 gem 'bootstrap-sass'
 # Use Puma as the app server
