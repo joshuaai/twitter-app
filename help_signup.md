@@ -15,7 +15,7 @@ In contrast to the plural convention for controller names, model names are singu
 a Users controller, but a User model.
 `rails generate model User name:string email:string`
 
-```
+```bash
 rails db:migrate
 heroku run rails db:migrate
 rails c --sandbox
@@ -28,7 +28,7 @@ user.update_attributes(created_at: 1.year.ago)
 
 ### Email Validations
 Create a test that validates a user. In the models/user_test.rb file Add
-```
+```ruby
 def setup
     @user = User.new(name: "Example User", email: "user@example.com")
 end
@@ -41,7 +41,7 @@ end
 Create a test that validates the presence of certain elements in `user_test.rb` file.
 
 To the user.rb file, add 
-```
+```ruby
 validates :name, presence: true
 VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i
 validates :email, presence: true, format: { with: VALID_EMAIL_REGEX }
@@ -49,14 +49,16 @@ validates :email, presence: true, format: { with: VALID_EMAIL_REGEX }
 
 Add database indicies for email uniqueness validation at the database level.
 This is because the Active Record uniqueness validation does not guarantee uniqueness at the database level.
-```
+```bash
 rails generate migration add_index_to_users_email
-
-In the migration file, add to the change method
+```
+```ruby
+#In the migration file, add to the change method
 add_index :users, :email, unique: true
-
+```
+```bash
 rails db:migrate
-rails db:reset if rails test fails.
+rails db:reset #if rails test fails.
 ```
 
 ### Secure Password
@@ -71,16 +73,16 @@ Add `has_secure_password` to user.rb
 
 Add `password: "foobar", password_confirmation: "foobar"` to setup method in user_test.rb
 
-Enforcing minimum password standards
-```
+Enforcing minimum password standards: 
 To the user.rb model add
+```ruby
 validates :password, presence: true, length: { minimum: 6 }
 ```
 
 ## Sign Up
 In the application.html.erb under the footer partial, add `<%= debug(params) if Rails.env.development? %>`
 To the custom.scss, add
-```
+```css
 /* miscellaneous */
 
 @mixin box_sizing {
@@ -104,7 +106,7 @@ Gravatars are a convenient way to include user profile images without going thro
 managing image upload, cropping, and storage
 
 Inside show.html.erb
-```
+```html
 <% provide(:title, @user.name) %>
 <h1>
   <%= gravatar_for @user %>
@@ -113,7 +115,7 @@ Inside show.html.erb
 ```
 
 Define the `gravatar_for` helper in the users_helper.rb
-```
+```ruby
 def gravatar_for(user)
     gravatar_id = Digest::MD5::hexdigest(user.email.downcase)
     gravatar_url = "https://secure.gravatar.com/avatar/#{gravatar_id}"
@@ -123,7 +125,7 @@ end
 
 ### Creating the user
 In the user_controller.rb file, add 
-```
+```ruby
 def create
     @user = User.new(user_params)
     if @user.save
@@ -141,8 +143,8 @@ private
   end
 ```
 
-Inside the container div in application.html.erb, add
-```
+Inside the container div in `application.html.erb`, add
+```html
 <% flash.each do |message_type, message| %>
     <div class="alert alert-<%= message_type %>"><%= message %></div>
 <% end %>
@@ -154,8 +156,8 @@ be used in views across multiple controllers.
 
 In new.html.erb, we add `<%= render 'shared/error_messages' %>` 
 
-In _error_messages.html.erb
-```
+In `_error_messages.html.erb` add:
+```html
 <% if @user.errors.any? %>
   <div id="error_explanation">
     <div class="alert alert-danger">
@@ -171,7 +173,7 @@ In _error_messages.html.erb
 ```
 
 To the custom.scss add:
-```
+```css
 .field_with_errors {
   @extend .has-error;
   .form-control {
@@ -187,8 +189,8 @@ Create an integrated test using
 The main purpose of the test is to verify that clicking the signup button results in not creating 
 a new user when the submitted information is invalid.
 
-To the users_signup_test.rb file created, add
-```
+To the `users_signup_test.rb` file created, add
+```ruby
 test "invalid signup information" do
     get signup_path
     assert_no_difference 'User.count' do
@@ -208,7 +210,7 @@ In the production.rb file, add
 To use SSL on a custom URL, check [Heroku SSL Documentation](https://devcenter.heroku.com/articles/ssl).
 
 Use the Puma web server in production by replacing the contents of puma.rb with 
-```
+```ruby
 workers Integer(ENV['WEB_CONCURRENCY'] || 2)
 threads_count = Integer(ENV['RAILS_MAX_THREADS'] || 5)
 threads threads_count, threads_count
@@ -228,7 +230,7 @@ end
 ```
 
 In the appliaton root directory create a Procfile and add to it
-`web: bundle exec puma -C config/puma.rb`
+`web: bundle exec puma -C config/puma.rb` 
 
-The next session is completing [Login Using Sessions](https://github.com/joshuaai/twitter-app/blob/master/help_login.md)
+The next session is completing [Login Using Sessions](help_login.md)
 

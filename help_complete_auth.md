@@ -1,14 +1,14 @@
 # Updating Users
 
 In the `users_controller.rb` file, add the edit action
-```
+```ruby
 def edit
     @user = User.find(params[:id])
 end
 ```
 
 Add the `_form.html.erb` partial file to the views/users folder
-```
+```html
 <%= form_for(@user) do |f| %>
   <%= render 'shared/error_messages', object: @user %>
 
@@ -29,7 +29,7 @@ Add the `_form.html.erb` partial file to the views/users folder
 ```
 
 In the `users/edit.html.erb` file add:
-```
+```html
 <% provide(:title, 'Edit user') %>
 <% provide(:button_text, 'Save changes') %>
 <h1>Update your profile</h1>
@@ -45,7 +45,7 @@ In the `users/edit.html.erb` file add:
 ```
 
 Change the `users/new.html.erb` file to:
-```
+```html
 <% provide(:title, 'Sign up') %>
 <% provide(:button_text, 'Create my account') %>
 <h1>Sign up</h1>
@@ -59,7 +59,7 @@ Change the `users/new.html.erb` file to:
 To the `_header.html.erb` partial file, add `edit_user_path(current_user)` as the path for `link_to "Settings"`. 
 
 Create the update action:
-```
+```ruby
 def update
     @user = User.find(params[:id])
     if @user.update_attributes(user_params)
@@ -74,7 +74,7 @@ end
 Top test for unsuccessful edits, generate the an integration test: `rails generate integration_test users_edit`.
 
 Write a simple test for unsuccessful and successful edits in `users_edit_test.rb`:
-```
+```ruby
 def setup
     @user = users(:michael)
 end
@@ -112,7 +112,7 @@ To get the tests to pass, we need to make an exception to the password validatio
 
 # Authorization
 Before filters use the `before_action` command to arrange for a particular method to be called before the given actions. To require users to be logged in, we define a `logged_in_user` method and invoke it using `before_action :logged_in_user`
-```
+```ruby
 class UsersController < ApplicationController
     before_action :logged_in_user, only: [:edit, :update]
     .
@@ -141,7 +141,7 @@ Because the before filter operates on a per-action basis, we’ll put the corres
 
 Also add the test that ensures the user is redirected for a login attempt with the wrong user.
 
-```
+```ruby
 def setup
     @user = users(:michael)
     @other_user = users(:joshua)
@@ -179,7 +179,7 @@ end
 ```
 
 To complete the second part of the above, we add a `correct_user` before action.
-```
+```ruby
 before_action :correct_user, only: [:edit, :update]
 .
 .
@@ -200,7 +200,7 @@ end
 ```
 
 To test for friendly forwarding i.e. to ensure that failed edit attempts due to not being logged in redirect the user to the appropriate page. Refactor the successful edit test in `users_edit_test.rb` by replacing the lines before `name  = "Foo Bar"` with
-```
+```ruby
 test "successful edit with friendly forwarding" do
     get edit_user_path(@user)
     log_in_as(@user)
@@ -212,7 +212,7 @@ end
 ```
 
 To implement friendly forwarding, we add two methods to the `sessions_helper.rb` file:
-```
+```ruby
 .
 .
 .
@@ -236,7 +236,7 @@ To the `session_controller.rb` create action replace the `redirect_to user` with
 Restrict the access to view all users
 
 In the `users_controller_test.rb`, add the test for this as the first test
-```
+```ruby
 test "should redirect index when not logged in" do
     get users_path
     assert_redirected_to login_url
@@ -244,7 +244,7 @@ end
 ```
 
 In the `users_controller.rb` file, add the index action:
-```
+```ruby
 before_action :logged_in_user, only: [:index, :edit, :update]
 
 def index
@@ -253,7 +253,7 @@ end
 ```
 
 Now create the `users/index.html.erb` view for the index action:
-```
+```html
 <% provide(:title, 'All users') %>
 <h1>All users</h1>
 
@@ -268,17 +268,17 @@ Now create the `users/index.html.erb` view for the index action:
 ```
 
 In the `users_helper.rb` file, update the `gravatar_for` helper with a size attribute that allows our code above specify the size like we did.
-```
+```ruby
 def gravatar_for(user, options = { size: 80 })
     gravatar_id = Digest::MD5::hexdigest(user.email.downcase)
     size = options[:size]
     gravatar_url = "https://secure.gravatar.com/avatar/#{gravatar_id}?s=#{size}"
     image_tag(gravatar_url, alt: user.name, class: "gravatar")
-  end
+end
 ```
 
 Style the `custom.scss` as follows
-```
+```css
 .
 .
 .
@@ -296,20 +296,20 @@ Style the `custom.scss` as follows
 ```
 
 Add the URL to the users link in the site’s navigation header using users_path, in `_header.html.erb` just before the `dropdown` class.
-```
+```html
 <li><%= link_to "Users", users_path %></li>
 ```
 
 ## Random Users
 Add a faker gem to generate random users. Typically we will use the Faker in development mode only, but in this case, we install globally.
-```
+```ruby
 gem 'faker'
 
 bundle install
 ```
 
 In the db/seeds.rb file, add 
-```
+```ruby
 User.create!(name:  "Example User",
              email: "example@railstutorial.org",
              password:              "foobar",
@@ -331,7 +331,7 @@ Run `rails db:migrate:reset` and `rails db:seed`
 
 # Pagination
 Add the gems for this:
-```
+```ruby
 gem 'will_paginate'
 gem 'bootstrap-will_paginate'
 ```
@@ -342,7 +342,7 @@ In the `users_controller.rb` file, replace `@user = User.all` with `@users = Use
 
 ## Users Index Test
 Create extra dummy users in the `fixtures/users.yml` file
-```
+```yml
 archer:
   name: Sterling Archer
   email: duchess@example.gov
@@ -369,7 +369,7 @@ user_<%= n %>:
 Generate the integration tests for this by running ` rails generate integration_test users_index`.
 
 In the generated `users_index_test.rb` file, add the tests:
-```
+```ruby
 def setup
      @user = users(:michael)
 end
@@ -387,7 +387,7 @@ end
 
 # Refactoring with Partials
 Create a `users/_user.html.erb` partial to hold the user `li`.
-```
+```html
 <li>
   <%= gravatar_for user, size: 50 %>
   <%= link_to user.name, user %>
@@ -399,7 +399,7 @@ Replace the `li` and `for_each` in `users/index.html.erb` with `<%= render @user
 # Administrative Users
 We will identify privileged administrative users with a boolean admin attribute in the User model, which will lead automatically to an admin? boolean method to test for admin status.
 
-```
+```bash
 rails generate migration add_admin_to_users admin:boolean
 ```
 
@@ -413,7 +413,7 @@ Run `rails db:migrate:reset` and `rails db:seed`.
 The final step needed to complete the Users resource is to add delete links and a destroy action. The resulting "delete" links will be displayed only if the current user is an admin.
 
 Inside the `li` tag of the `_user.html.erb` partial, add:
-```
+```html
 <% if current_user.admin? && !current_user?(user) %>
     | <%= link_to "delete", user, method: :delete,
                                   data: { confirm: "You sure?" } %>
@@ -421,7 +421,7 @@ Inside the `li` tag of the `_user.html.erb` partial, add:
 ```
 
 Add the destroy action to the `users_controller.rb` file:
-```
+```ruby
 before_action :logged_in_user, only: [:index, :edit, :update, :destroy]
 .
 .
@@ -436,7 +436,7 @@ end
 In the same users controller, add a before action restriction: `before_action :admin_user, only: :destroy`. 
 
 Add also the `admin_user` method as part of the before action methods under private field:
-```
+```ruby
 # Confirms an admin user.
 def admin_user
     redirect_to(root_url) unless current_user.admin?
@@ -446,7 +446,7 @@ end
 To test this, add `admin: true` to one user in the `fixtures/users.yml` file.
 
 Add the test to `users_controller_test.rb`:
-```
+```ruby
 test "should redirect destroy when not logged in" do
     assert_no_difference 'User.count' do
       delete user_path(@user)
@@ -464,7 +464,7 @@ end
 ```
 
 In the `users_index_test.rb` repplace the contents with:
-```
+```ruby
 def setup
     # admin user
     @admin = users(:joshua)
@@ -495,6 +495,18 @@ test "index as non-admin" do
     assert_select 'a', text: 'delete', count: 0
 end
 ```
+
+Push to Heroku
+```bash
+rails test
+git push heroku
+heroku pg:reset DATABASE
+heroku run rails db:migrate
+heroku run rails db:seed
+heroku restart
+```
+
+The next session is setting up [Tweets and Followers](help_tweets_followers.md)
 
 
 

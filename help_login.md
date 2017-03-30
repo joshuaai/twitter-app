@@ -7,18 +7,19 @@ The most common techniques for implementing sessions in Rails involve using cook
 Unlike the `Users` resource, which uses a database back-end (via the User model) to persist data, the `Sessions` resource is a cookie-based authentication machinery. We will construct a sessions controller, a login form and then the relevant controller actions.
 
 ### Sessions Controller
-```
+```bash
 git checkout -b basic-login
-
 rails generate controller Sessions new
-
+```
+In the `routes.rb`
+```ruby
 get    '/login',  to: 'sessions#new'
 post   '/login',  to: 'sessions#create'
 delete '/logout', to: 'sessions#destroy'
 ```
 
-In sessions_controller_test.rb replace the sessions login path with the new one
-```
+In `sessions_controller_test.rb` replace the sessions login path with the new one
+```ruby
 test "should get new" do
     get login_path
     assert_response :success
@@ -28,8 +29,8 @@ end
 ### Login Form
 As session isn’t an Active Record object, we’ll render the error as a flash message instead.
 
-In sessions/new.html.erb
-```
+In `sessions/new.html.erb` add:
+```html
 <% provide(:title, "Log in") %>
 <h1>Log in</h1>
 
@@ -52,7 +53,7 @@ In sessions/new.html.erb
 ```
 
 Update the sessions_controller.rb file with the create and destroy methods.
-```
+```ruby
 def create
     user = User.find_by(email: params[:session][:email].downcase)
     if user && user.authenticate(params[:session][:password])
@@ -81,7 +82,7 @@ Write a short integration test to check for login errors especially with the fla
 * Verify that the flash message doesn’t appear on the new page.
 
 Write the test in users_login_test.rb
-```
+```ruby
 test "login with invalid information" do
     get login_path
     assert_template 'sessions/new'
@@ -98,7 +99,7 @@ end
 In application_controller.rb include the sessions helper thus: `include SessionsHelper`
 
 In sessions_helper.rb add:
-```
+```ruby
 #Logs in the given user
 def log_in(user)
     sessions[:user_id] = user.id
@@ -119,7 +120,7 @@ end
 We create the the logged_in? boolean as a helper as seen above.
 
 In _header.html.erb add after the help link:
-```
+```html
 <% if logged_in? %>
     <li><%= link_to "Users", '#' %></li>
     <li class="dropdown">
@@ -153,7 +154,7 @@ The default Rails way to do this is to use fixtures, which are a
 way of organizing data to be loaded into the test database.
 
 Add to the models/user.rb file
-```
+```ruby
 # Returns the hash digest of the given string.
 def User.digest(string)
     cost = ActiveModel::SecurePassword.min_cost ? BCrypt::Engine::MIN_COST :
@@ -162,16 +163,16 @@ def User.digest(string)
 end
 ```
 
-Add the fixture to the fixtures/users.yml
-```
-Joshua:
+Add the fixture to the `fixtures/users.yml`
+```ruby
+joshua:
     name: Joshua Example
     email: joshua@example.com
     password_digest: <%= User.digest('password') %>
 ```
 
-In the users_login_test.rb file add 
-```
+In the `users_login_test.rb` file add 
+```ruby
 def setup
     @user = users(:michael)
 end
@@ -194,8 +195,8 @@ end
 ## Login upon Signup
 We need to add a call to `log_in` in the users_controller.rb create action: `log_in @user`.
 
-To test this we define an is_logged_in? method in the ActiveSupport::TestCase of test_helper.rb
-```
+To test this we define an `is_logged_in?` method in the ActiveSupport::TestCase of `test_helper.rb`
+```ruby
 # Returns true if a test user is logged in.
 def is_logged_in?
     !session[:user_id].nil?
@@ -203,7 +204,7 @@ end
 ```
 
 Inside the `users_signup_test.rb` file, we assert the above method and add the test
-```
+```ruby
 test "valid signup information" do
     get signup_path
     assert_difference 'User.count', 1 do
@@ -220,7 +221,7 @@ end
 
 ## Logging Out
 Inside the sessions_helper.rb file, define:
-```
+```ruby
 # Logs out the current user.
 def log_out
     session.delete(:user_id)
@@ -229,7 +230,7 @@ end
 ```
 
 Then we put the log_out method to use in the sessions_controller.rb destroy action.
-```
+```ruby
 def destroy
     log_out if logged_in?
     redirect_to root_url
@@ -237,7 +238,7 @@ end
 ```
 
 Test this in the users_login_test.rb file by adding:
-```
+```ruby
 test "login with valid information followed by logout" do
     get login_path
     post login_path, params: { session: { email:    @user.email,
@@ -270,13 +271,13 @@ We test the the login/logut machinery appear and disappear when the given action
 * When presented with a cookie containing a persistent user id, find the user in the database using the given id, and verify that the remember token cookie matches the associated hash digest from the database.
 
 We’ll start by adding the required remember_digest attribute to the User model:
-```
+```bash
 rails generate migration add_remember_digest_to_users remember_digest:string
 rails db:migrate
 ```
 
 To the User.rb model, use the Ruby SecureRandom class to generate the remember token.
-```
+```ruby
 attr_accessor :remember_token
 .
 .
@@ -298,7 +299,7 @@ Rails has a special `.permanent` method which creates permanent cookies with an 
 For remebering the user_id, we'll use a signed cookie, which securely encrypts the cookie before placing it on the browser.
 
 To the User.rb, add 
-```
+```ruby
 # Returns true if the given token matches the digest.
 def authenticated?(remember_token)
     BCrypt::Password.new(remember_digest).is_password?(remember_token)
@@ -306,12 +307,12 @@ end
 ``` 
 
 To the sessions_controller, add to the conditional user.authenticate method (between `log_in user` and `redirect_user`):
-```
+```ruby
 remember user
 ```
 
 In the sessions_helper.rb file, after the `def log_in(user)` method, add:
-```
+```ruby
 # Remembers a user in a persistent session.
 def remember(user)
     user.remember
@@ -356,7 +357,7 @@ will be thrown on a logout or re-logging in  attempt.
 In the sessions_controller.rb file, add to the `def destroy` method `logout if logged_in?`
 
 In the user_test.rb file, add:
-```
+```ruby
 test "authenticated? should return false for a user with nil digest" do
     assert_not @user.authenticated?('')
 end
@@ -367,8 +368,8 @@ In the user.rb file, add `return false if remember_digest.nil?` to the `def auth
 ## "Remeber me" Checkbox
 As with labels, text fields, password fields, and submit buttons, checkboxes can be created with a Rails helper method.
 
-In sessions/new.html.erb, add after password field:
-```
+In `sessions/new.html.erb`, add after password field:
+```html
 <%= f.label :remember_me, class: "checkbox inline" do %>
     <%= f.check_box :remember_me %>
     <span>Remember me on this computer</span>
@@ -376,7 +377,7 @@ In sessions/new.html.erb, add after password field:
 ```
 
 In the custom.scss file, add to the /* Forms */ area:
-```
+```css
 .checkbox {
   margin-top: -10px;
   margin-bottom: 10px;
@@ -397,7 +398,7 @@ In sessions_controller.rb, after the `login_user` in the `def create` method, re
 ### Remeber tests
 We create a helper method in `test_helper.rb` that handles login in the tests so that we don't repeat ourselves. In the ActiveSupport::TestCase add:
 
-```
+```ruby
 # Log in as a particular user.
 def log_in_as(user)
     session[:user_id] = user.id
@@ -405,7 +406,7 @@ end
 ```
 
 Add the ActionDsipatch::IntegrationTest class:
-```
+```ruby
 class ActionDispatch::IntegrationTest
 
   # Log in as a particular user.
@@ -420,7 +421,7 @@ end
 To verify the behavior of the “remember me” checkbox, we’ll write two tests, one each for submitting with and without the checkbox checked.
 
 In `users_login_test.rb` add:
-```
+```ruby
 test "login with remembering" do
     log_in_as(@user, remember_me: '1')
     assert_not_empty cookies['remember_token']
@@ -436,7 +437,7 @@ end
 ```
 
 Add a `test/helpers/sessions_helper_test.rb` file with the contents:
-```
+```ruby
 require 'test_helper'
 
 class SessionsHelperTest < ActionView::TestCase
@@ -459,9 +460,11 @@ end
 ```
 
 After git commit, push to heroku 
-```
+```bash
 heroku maintenance:on
 git push heroku
 heroku run rails db:migrate
 heroku maintenance:off
 ```
+
+The next session is completing [Updating and Administering Users](help_complete_auth.md)
