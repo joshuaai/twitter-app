@@ -71,7 +71,7 @@ def update
 end
 ```
 
-Top test for unsuccessful edits, generate the an integration test: `rails generate integration_test users_edit`.
+To test for unsuccessful edits, generate the an integration test: `rails generate integration_test users_edit`.
 
 Write a simple test for unsuccessful and successful edits in `users_edit_test.rb`:
 ```ruby

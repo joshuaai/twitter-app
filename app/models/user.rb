@@ -1,4 +1,6 @@
 class User < ApplicationRecord
+    has_many :tweets, dependent: :destroy
+
     attr_accessor :remember_token
 
     before_save { self.email = email.downcase } # this is a callback
@@ -9,6 +11,10 @@ class User < ApplicationRecord
                       uniqueness: { case_sensitive: false }
     has_secure_password
     validates :password, presence: true, length: { minimum: 6 }, allow_nil: true
+
+    def feed
+        Tweet.where("user_id = ?", id)
+    end
 
     # Returns the hash digest of the given string.
     def User.digest(string)

@@ -7,23 +7,32 @@ end
 
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 5.0.1'
+gem 'rails',                                          '~> 5.0.1'
 # Password digest
 gem 'bcrypt'
 # Generate random users
 gem 'faker'
+# Carrier Wave Image Uploader
+gem 'carrierwave',                                    '1.0.0'
+# Carrier Wave image resizers
+#gem 'mini_magick',                                    '4.7.0'
+#gem 'fog',                                            '1.40.0'
+# Cloudinary image manager
+gem 'cloudinary'
+# Rails pagination
 gem 'will_paginate'
+# Bootstrap pagination
 gem 'bootstrap-will_paginate'
 # Bootstrap
 gem 'bootstrap-sass'
 # Use Puma as the app server
-gem 'puma', '~> 3.0'
+gem 'puma',                                           '~> 3.0'
 # Use SCSS for stylesheets
-gem 'sass-rails', '~> 5.0'
+gem 'sass-rails',                                     '~> 5.0'
 # Use Uglifier as compressor for JavaScript assets
-gem 'uglifier', '>= 1.3.0'
+gem 'uglifier',                                       '>= 1.3.0'
 # Use CoffeeScript for .coffee assets and views
-gem 'coffee-rails', '~> 4.2'
+gem 'coffee-rails',                                   '~> 4.2'
 # See https://github.com/rails/execjs#readme for more supported runtimes
 # gem 'therubyracer', platforms: :ruby
 
@@ -51,6 +60,7 @@ end
 group :development do
   # Access an IRB console on exception pages or by using <%= console %> anywhere in the code.
   gem 'web-console', '>= 3.3.0'
+   gem 'wdm', '>= 0.1.0' if Gem.win_platform?
   gem 'listen'
   gem 'spring'
   gem 'spring-watcher-listen'

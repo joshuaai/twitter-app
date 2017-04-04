@@ -8,6 +8,15 @@
       </h1>
     </section>
   </aside>
+  <div class="col-md-8">
+    <% if @user.tweets.any? %>
+      <h3>Tweets (<%= @user.tweets.count %>)</h3>
+      <ol class="tweets">
+        <%= render @tweets %>
+      </ol>
+      <%= will_paginate @tweets %>
+    <% end %>
+  </div>
 </div>
 <p>Name: <%= @user.name %> <br>Email: <%= @user.email %> <br>Created At: <%= @user.created_at %> <br> 
 Updated At: <%= @user.updated_at %> <br>Current Time: <%= Time.now %></p>
