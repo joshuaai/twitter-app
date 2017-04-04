@@ -652,6 +652,21 @@ Before pushing to Heroku, ensure that the test images do not get uploaded to the
 /public/uploads
 ```
 
+Push to Git and Heroku
+```bash
+rails test
+git add -A
+git commit -m "Add user tweets"
+git checkout master
+git merge user-tweets
+git push
+
+git push heroku
+heroku pg:reset DATABASE
+heroku run rails db:migrate
+heroku run rails db:seed
+```
+
 **-------------------------------------------------------** 
 
 We can alternatively use `ImageMagick` by CarrierWave for manipulating the images to our taste.
