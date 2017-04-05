@@ -667,6 +667,8 @@ heroku run rails db:migrate
 heroku run rails db:seed
 ```
 
+The final part of this program is the [Following Users](help_followers.md).
+
 **-------------------------------------------------------** 
 
 We can alternatively use `ImageMagick` by CarrierWave for manipulating the images to our taste.

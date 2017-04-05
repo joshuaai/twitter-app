@@ -506,7 +506,7 @@ heroku run rails db:seed
 heroku restart
 ```
 
-The next session is setting up [Tweets and Followers](help_tweets_followers.md)
+The next session is setting up [Tweets and Followers](help_tweets.md)
 
 
 
