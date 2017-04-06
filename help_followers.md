@@ -609,3 +609,15 @@ end
 
 To conclude, push to both git and heroku:
 ```bash
+rails test
+git add -A
+git commit -m "Add user following"
+git checkout master
+git merge following-users
+
+git push
+git push heroku
+heroku pg:reset DATABASE
+heroku run rails db:migrate
+heroku run rails db:seed
+```
